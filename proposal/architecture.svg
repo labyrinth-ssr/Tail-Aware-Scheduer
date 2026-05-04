@@ -1,0 +1,49 @@
+<svg width="100%" viewBox="0 0 680 580" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <style>
+      .t  { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; font-size: 14px; font-weight: 500; }
+      .ts { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; font-size: 12px; font-weight: 400; }
+    </style>
+  </defs>
+
+  <rect x="260" y="30" width="160" height="44" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="t" x="340" y="52" text-anchor="middle" dominant-baseline="central" fill="#2C2C2A">Incoming request</text>
+
+  <rect x="40" y="100" width="200" height="44" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.8" stroke-dasharray="4 3"/>
+  <text class="t" x="140" y="122" text-anchor="middle" dominant-baseline="central" fill="#633806">Optional: early reject</text>
+  <text class="ts" x="140" y="160" text-anchor="middle" fill="#5F5E5A">If queue depth &gt; threshold</text>
+
+  <line x1="340" y1="74" x2="340" y2="190" stroke="#5F5E5A" stroke-width="0.8" marker-end="url(#arrow)"/>
+  <line x1="240" y1="122" x2="320" y2="180" stroke="#5F5E5A" stroke-width="0.6" stroke-dasharray="3 3" fill="none"/>
+
+  <rect x="200" y="190" width="280" height="80" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+  <text class="t" x="340" y="218" text-anchor="middle" dominant-baseline="central" fill="#0C447C">Probation queue (high priority)</text>
+  <text class="ts" x="340" y="244" text-anchor="middle" dominant-baseline="central" fill="#185FA5">New requests + confirmed short</text>
+  <text class="ts" x="340" y="260" text-anchor="middle" dominant-baseline="central" fill="#185FA5">Scheduled first, batched normally</text>
+
+  <line x1="340" y1="270" x2="340" y2="310" stroke="#185FA5" stroke-width="0.8" marker-end="url(#arrow)"/>
+
+  <rect x="180" y="310" width="320" height="80" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+  <text class="t" x="340" y="338" text-anchor="middle" dominant-baseline="central" fill="#3C3489">Runtime monitor (per decode step)</text>
+  <text class="ts" x="340" y="362" text-anchor="middle" dominant-baseline="central" fill="#534AB7">Tracks token count + P(EOS) trend</text>
+  <text class="ts" x="340" y="378" text-anchor="middle" dominant-baseline="central" fill="#534AB7">Decides at end of probation window</text>
+
+  <text class="ts" x="160" y="425" text-anchor="middle" fill="#5F5E5A">finished or short</text>
+  <text class="ts" x="520" y="425" text-anchor="middle" fill="#5F5E5A">looks long</text>
+
+  <path d="M260 390 L260 410 L120 410 L120 460" stroke="#27500A" stroke-width="0.8" fill="none" marker-end="url(#arrow)"/>
+  <path d="M420 390 L420 410 L560 410 L560 460" stroke="#993C1D" stroke-width="0.8" fill="none" marker-end="url(#arrow)"/>
+
+  <rect x="40" y="460" width="160" height="60" rx="8" fill="#EAF3DE" stroke="#3B6D11" stroke-width="0.5"/>
+  <text class="t" x="120" y="482" text-anchor="middle" dominant-baseline="central" fill="#27500A">Stay in probation</text>
+  <text class="ts" x="120" y="502" text-anchor="middle" dominant-baseline="central" fill="#3B6D11">Until completion</text>
+
+  <rect x="480" y="460" width="160" height="60" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+  <text class="t" x="560" y="482" text-anchor="middle" dominant-baseline="central" fill="#712B13">Long queue (low priority)</text>
+  <text class="ts" x="560" y="502" text-anchor="middle" dominant-baseline="central" fill="#993C1D">FCFS + quota protection</text>
+
+  <text class="ts" x="340" y="555" text-anchor="middle" fill="#5F5E5A">Demotion is one-way: KV cache preserved, generation continues uninterrupted</text>
+</svg>

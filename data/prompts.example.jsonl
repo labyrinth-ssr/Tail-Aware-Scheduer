@@ -1,0 +1,3 @@
+{"id":"short_translation_001","prompt":"Translate to French: The meeting starts at noon.","source":"example_short"}
+{"id":"short_qa_001","prompt":"Answer briefly: What is the capital of Japan?","source":"example_short"}
+{"id":"long_reasoning_001","prompt":"Solve step by step: A train leaves City A at 60 mph and another leaves City B at 45 mph. They are 315 miles apart and travel toward each other. When do they meet? Explain your reasoning.","source":"example_long"}
