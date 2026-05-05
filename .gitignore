@@ -10,3 +10,6 @@ env/
 data/*.jsonl
 !data/prompts.example.jsonl
 *.log
+
+# Upstream working copies
+vllm/
