@@ -7,6 +7,37 @@ Course project workspace for tail-aware LLM request scheduling. The implementati
 3. Integrate the selected policy into vLLM's scheduler.
 4. Run serving benchmarks against FCFS and ablations.
 
+## vLLM Submodule
+
+This repo tracks our vLLM fork as a submodule:
+
+```bash
+git clone --recurse-submodules https://github.com/labyrinth-ssr/Tail-Aware-Scheduer.git
+```
+
+For an existing clone:
+
+```bash
+git submodule update --init --recursive
+```
+
+Submodule target:
+
+```text
+vllm -> https://github.com/labyrinth-ssr/vllm.git
+branch -> tail-aware-scheduler
+```
+
+Current scheduler skeleton is env-gated and token-count-only:
+
+```bash
+VLLM_TAIL_AWARE_SCHEDULING=1
+VLLM_TAIL_AWARE_SHORT_THRESHOLD=64
+VLLM_TAIL_AWARE_LONG_QUOTA=0.2
+```
+
+Default vLLM behavior is unchanged unless `VLLM_TAIL_AWARE_SCHEDULING=1` is set.
+
 ## Current Recommendation
 
 Do not start by editing vLLM directly. First collect offline traces with logit scores enabled and verify that `P(EOS)` separates short and long generations. This reduces the risk of spending time on scheduler integration before the core signal is validated.
@@ -63,7 +94,7 @@ Outputs include summary metrics, optional plots, and a CSV sweep table.
 
 ## vLLM Integration Plan
 
-After the offline signal looks useful, clone or fork vLLM and keep the scheduler changes small:
+After the offline signal looks useful, keep the scheduler changes small:
 
 - Add per-request queue state: `probation`, `confirmed_short`, `long`.
 - Track generated token count and recent `P(EOS)` in request metadata.
