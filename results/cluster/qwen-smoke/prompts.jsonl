@@ -1,0 +1,10 @@
+{"id":"short_translation_001","source":"short_translation","prompt":"Translate to French: The meeting starts at noon."}
+{"id":"short_translation_002","source":"short_translation","prompt":"Translate to Spanish: The server is busy, please try again later."}
+{"id":"short_qa_001","source":"short_qa","prompt":"Answer briefly: What is the capital of Japan?"}
+{"id":"short_qa_002","source":"short_qa","prompt":"Answer in one sentence: Why does ice float on water?"}
+{"id":"short_summary_001","source":"short_summary","prompt":"Summarize in one sentence: Large language models are neural networks trained on massive text corpora and adapted to follow instructions."}
+{"id":"short_rewrite_001","source":"short_rewrite","prompt":"Rewrite politely: Send me the report now."}
+{"id":"long_reasoning_001","source":"long_reasoning","prompt":"Solve step by step: A train leaves City A at 60 mph and another leaves City B at 45 mph. They are 315 miles apart and travel toward each other. When do they meet? Explain your reasoning."}
+{"id":"long_reasoning_002","source":"long_reasoning","prompt":"A store sells notebooks for $3 each and pens for $2 each. A student buys 17 items and spends $43. How many notebooks and pens did the student buy? Show the full reasoning."}
+{"id":"long_code_001","source":"long_code","prompt":"Write a Python function to merge overlapping intervals. Explain the algorithm, edge cases, and complexity, then provide tests."}
+{"id":"long_code_002","source":"long_code","prompt":"Implement a simple LRU cache in Python using a dictionary and a doubly linked list. Explain each operation and include a short usage example."}

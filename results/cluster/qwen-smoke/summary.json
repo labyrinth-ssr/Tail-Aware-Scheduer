@@ -1,0 +1,10 @@
+{
+  "num_traces": 10,
+  "length_threshold": 100,
+  "short_count": 6,
+  "long_count": 4,
+  "output_len_median": 32.0,
+  "output_len_p90": 256.0,
+  "corr_output_len_vs_max_p_eos_first_32": -0.8444887859089942,
+  "auc_long_from_low_max_p_eos_first_32": 1.0
+}
