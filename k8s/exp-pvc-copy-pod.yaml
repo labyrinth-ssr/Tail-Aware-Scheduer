@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: tail-aware-exp-copy
+  namespace: ucsc-hsc
+spec:
+  restartPolicy: Never
+  containers:
+    - name: copy
+      image: ubuntu:focal
+      command:
+        - sleep
+        - "21600"
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 200m
+          memory: 512Mi
+      volumeMounts:
+        - name: exp
+          mountPath: /workspace
+  volumes:
+    - name: exp
+      persistentVolumeClaim:
+        claimName: exp-pvc
