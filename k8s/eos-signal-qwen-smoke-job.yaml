@@ -113,7 +113,7 @@ spec:
       volumes:
         - name: exp
           persistentVolumeClaim:
-            claimName: exp-pvc
+            claimName: tail-aware-eos-pvc
         - name: prompts
           configMap:
             name: tail-aware-eos-prompts-smoke
