@@ -22,14 +22,17 @@ spec:
             - |
               set -eux
               mkdir -p /workspace/src
-              if [ -d /workspace/src/Tail-Aware-Scheduer/.git ]; then
-                git -C /workspace/src/Tail-Aware-Scheduer fetch origin main
-                git -C /workspace/src/Tail-Aware-Scheduer checkout main
-                git -C /workspace/src/Tail-Aware-Scheduer reset --hard origin/main
-                git -C /workspace/src/Tail-Aware-Scheduer submodule update --init --recursive
+              REPO=/workspace/src/Tail-Aware-Scheduer
+              if [ -d "$REPO/.git" ]; then
+                git -C "$REPO" fetch origin main
+                git -C "$REPO" checkout main
+                git -C "$REPO" reset --hard origin/main
               else
-                git clone --recurse-submodules https://github.com/labyrinth-ssr/Tail-Aware-Scheduer.git /workspace/src/Tail-Aware-Scheduer
+                git clone https://github.com/labyrinth-ssr/Tail-Aware-Scheduer.git "$REPO"
               fi
+              git -C "$REPO" submodule init
+              git -C "$REPO/vllm" fetch origin tail-aware-scheduler
+              git -C "$REPO" submodule update --recursive
           resources:
             requests:
               cpu: "1"
