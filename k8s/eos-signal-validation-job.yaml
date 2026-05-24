@@ -1,0 +1,101 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: tail-aware-eos-validation
+  namespace: ucsc-hsc
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 604800
+  template:
+    metadata:
+      labels:
+        app: tail-aware-eos
+        run: validation
+    spec:
+      restartPolicy: Never
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: PreferNoSchedule
+      initContainers:
+        - name: checkout
+          image: alpine/git:2.45.2
+          command:
+            - sh
+            - -lc
+            - |
+              set -eux
+              mkdir -p /workspace/src
+              if [ -d /workspace/src/Tail-Aware-Scheduer/.git ]; then
+                git -C /workspace/src/Tail-Aware-Scheduer fetch origin main
+                git -C /workspace/src/Tail-Aware-Scheduer checkout main
+                git -C /workspace/src/Tail-Aware-Scheduer reset --hard origin/main
+              else
+                git clone https://github.com/labyrinth-ssr/Tail-Aware-Scheduer.git /workspace/src/Tail-Aware-Scheduer
+              fi
+          volumeMounts:
+            - name: exp
+              mountPath: /workspace
+      containers:
+        - name: eos-validation
+          image: pytorch/pytorch:2.4.1-cuda12.4-cudnn9-runtime
+          imagePullPolicy: IfNotPresent
+          workingDir: /workspace/src/Tail-Aware-Scheduer
+          env:
+            - name: HF_HOME
+              value: /workspace/hf-cache
+            - name: HF_DATASETS_CACHE
+              value: /workspace/hf-datasets-cache
+            - name: TRANSFORMERS_CACHE
+              value: /workspace/hf-cache
+            - name: TORCH_HOME
+              value: /workspace/torch-cache
+            - name: PYTHONUNBUFFERED
+              value: "1"
+          command:
+            - bash
+            - -lc
+            - |
+              set -euxo pipefail
+              python -m pip install --upgrade pip
+              python -m pip install -r requirements-offline.txt
+              OUT=/workspace/tail-aware-results/eos_signal/qwen-validation
+              mkdir -p "$OUT"
+              python experiments/eos_signal/build_validation_prompts.py \
+                --output "$OUT/prompts.jsonl" \
+                --max-per-source 100 \
+                --seed 0
+              python experiments/eos_signal/collect_eos_traces.py \
+                --model Qwen/Qwen2.5-7B-Instruct \
+                --input "$OUT/prompts.jsonl" \
+                --output "$OUT/traces.jsonl" \
+                --max-new-tokens 512 \
+                --temperature 0.0 \
+                --dtype bfloat16
+              python experiments/eos_signal/analyze_eos_traces.py \
+                --input "$OUT/traces.jsonl" \
+                --out-dir "$OUT" \
+                --length-threshold 100 \
+                --n-values 8,16,32 \
+                --short-threshold-values 32,64,100,128 \
+                --eos-thresh-values 0.001,0.005,0.01,0.02,0.05,0.1
+          resources:
+            requests:
+              cpu: "4"
+              memory: 32Gi
+              ephemeral-storage: 40Gi
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "8"
+              memory: 64Gi
+              ephemeral-storage: 80Gi
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: exp
+              mountPath: /workspace
+      volumes:
+        - name: exp
+          persistentVolumeClaim:
+            claimName: tail-aware-eos-pvc

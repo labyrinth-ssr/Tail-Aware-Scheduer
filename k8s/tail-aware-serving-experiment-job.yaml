@@ -1,0 +1,173 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tail-aware-serving-mixed-prompts
+  namespace: ucsc-hsc
+data:
+  serving_mixed.jsonl: |
+    {"prompt":"Translate to French: The meeting starts at noon.","output_tokens":24}
+    {"prompt":"Answer briefly: What is the capital of Japan?","output_tokens":16}
+    {"prompt":"Summarize in one sentence: Large language models are neural networks trained on massive text corpora and adapted to follow instructions.","output_tokens":32}
+    {"prompt":"Rewrite politely: Send me the report now.","output_tokens":24}
+    {"prompt":"Translate to Spanish: The server is busy, please try again later.","output_tokens":24}
+    {"prompt":"Answer in one sentence: Why does ice float on water?","output_tokens":32}
+    {"prompt":"Solve step by step: A train leaves City A at 60 mph and another leaves City B at 45 mph. They are 315 miles apart and travel toward each other. When do they meet? Explain your reasoning.","output_tokens":192}
+    {"prompt":"A store sells notebooks for $3 each and pens for $2 each. A student buys 17 items and spends $43. How many notebooks and pens did the student buy? Show the full reasoning.","output_tokens":224}
+    {"prompt":"Write a Python function to merge overlapping intervals. Explain the algorithm, edge cases, and complexity, then provide tests.","output_tokens":256}
+    {"prompt":"Implement a simple LRU cache in Python using a dictionary and a doubly linked list. Explain each operation and include a short usage example.","output_tokens":256}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: tail-aware-serving-experiment
+  namespace: ucsc-hsc
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 604800
+  template:
+    metadata:
+      labels:
+        app: tail-aware-vllm
+        run: serving-experiment
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: nvidia.com/gpu.present
+                    operator: In
+                    values:
+                      - "true"
+                  - key: nvidia.com/gpu.memory
+                    operator: In
+                    values:
+                      - "24564"
+                      - "24576"
+                      - "32768"
+                      - "40960"
+                      - "46068"
+                      - "49140"
+                      - "81920"
+                      - "97871"
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: PreferNoSchedule
+      initContainers:
+        - name: checkout
+          image: alpine/git:2.45.2
+          command:
+            - sh
+            - -lc
+            - |
+              set -eux
+              git clone --depth 1 --branch tail-aware-scheduler \
+                https://github.com/labyrinth-ssr/vllm.git /src/vllm
+          volumeMounts:
+            - name: src
+              mountPath: /src
+      containers:
+        - name: experiment
+          image: vllm/vllm-openai:latest
+          imagePullPolicy: IfNotPresent
+          workingDir: /src/vllm
+          env:
+            - name: HF_HOME
+              value: /workspace/hf-cache
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: SETUPTOOLS_SCM_PRETEND_VERSION
+              value: "0.1.dev0"
+          command:
+            - bash
+            - -lc
+            - |
+              set -euxo pipefail
+              curl -LsSf https://astral.sh/uv/install.sh | sh
+              export PATH="$HOME/.local/bin:$PATH"
+              VLLM_USE_PRECOMPILED=1 uv pip install --system -e '.[bench]'
+
+              MODEL="${MODEL:-Qwen/Qwen2.5-7B-Instruct}"
+              OUT=/workspace/tail-aware-results/serving/qwen-mixed
+              mkdir -p "$OUT"
+              cp /inputs/serving_mixed.jsonl "$OUT/serving_mixed.jsonl"
+
+              run_case() {
+                name="$1"
+                tail_enabled="$2"
+                eos_thresh="$3"
+                quota="$4"
+                log_path="$OUT/${name}.tail_aware.jsonl"
+                server_log="$OUT/${name}.server.log"
+
+                export VLLM_TAIL_AWARE_SCHEDULING="$tail_enabled"
+                export VLLM_TAIL_AWARE_SHORT_THRESHOLD=64
+                export VLLM_TAIL_AWARE_LONG_QUOTA="$quota"
+                export VLLM_TAIL_AWARE_EOS_WINDOW=16
+                export VLLM_TAIL_AWARE_EOS_THRESH="$eos_thresh"
+                export VLLM_TAIL_AWARE_LOG_PATH="$log_path"
+
+                vllm serve "$MODEL" \
+                  --host 0.0.0.0 \
+                  --port 8000 \
+                  --max-num-seqs 16 \
+                  --max-num-batched-tokens 2048 \
+                  > "$server_log" 2>&1 &
+                server_pid="$!"
+                trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+                python3 -m vllm.entrypoints.cli.main bench serve \
+                  --backend openai \
+                  --base-url http://127.0.0.1:8000 \
+                  --model "$MODEL" \
+                  --dataset-name custom \
+                  --dataset-path /inputs/serving_mixed.jsonl \
+                  --num-prompts 200 \
+                  --request-rate 8 \
+                  --temperature 0 \
+                  --percentile-metrics ttft,tpot,itl,e2el \
+                  --save-result \
+                  --save-detailed \
+                  --result-dir "$OUT" \
+                  --result-filename "${name}.json" \
+                  --ready-check-timeout-sec 900 \
+                  --metadata case="$name" tail_aware="$tail_enabled" long_quota="$quota" eos_thresh="$eos_thresh"
+                kill "$server_pid"
+                wait "$server_pid" || true
+                trap - EXIT
+              }
+
+              run_case baseline 0 0.05 0.2
+              run_case token_count_only 1 0.0 0.2
+              run_case eos_aware 1 0.05 0.2
+              run_case quota_0_1 1 0.05 0.1
+              run_case quota_0_3 1 0.05 0.3
+          resources:
+            requests:
+              cpu: "4"
+              memory: 32Gi
+              ephemeral-storage: 40Gi
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "4"
+              memory: 40Gi
+              ephemeral-storage: 80Gi
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: src
+              mountPath: /src
+            - name: workspace
+              mountPath: /workspace
+            - name: prompts
+              mountPath: /inputs
+              readOnly: true
+      volumes:
+        - name: src
+          emptyDir: {}
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: tail-aware-eos-pvc
+        - name: prompts
+          configMap:
+            name: tail-aware-serving-mixed-prompts

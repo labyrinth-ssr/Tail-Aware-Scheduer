@@ -24,13 +24,18 @@ This is the only component that touches LLM internals. At every decode step, for
 - **Token count** — number of tokens generated so far. Free, model-agnostic.
 - **P(EOS) trend** — the probability assigned to the EOS token (or the sum over all stop tokens for models with multiple) at the current step. Obtained from vLLM's `logprobs` field; if EOS falls outside the top-k returned by the sampler, treated as effectively zero. We track the per-request maximum P(EOS) over the last *N* steps as a robustness measure against single-step noise.
 
-**Decision rule** (applied once when a request reaches step *N*):
+**Decision rule** (applied after a request reaches step *N*):
 
-```
-if tokens < short_threshold OR max(P_EOS_history) > eos_thresh:
-    → confirmed short, stay in probation
-else:
-    → confirmed long, demote to long queue
+```text
+Before N generated tokens:
+  keep request in probation.
+
+At each decode step after N:
+  if generated_tokens >= short_threshold
+     and max(P_EOS over recent N tokens) <= eos_thresh:
+       demote to long queue.
+  else:
+       keep request in probation.
 ```
 
 The decision is **one-way**: a request demoted to the long queue does not get promoted back, even if its later behavior looks short again. This avoids oscillation and simplifies fairness reasoning.
