@@ -1,0 +1,10 @@
+{"prompt":"Translate to French: The meeting starts at noon.","output_tokens":24}
+{"prompt":"Answer briefly: What is the capital of Japan?","output_tokens":16}
+{"prompt":"Summarize in one sentence: Large language models are neural networks trained on massive text corpora and adapted to follow instructions.","output_tokens":32}
+{"prompt":"Rewrite politely: Send me the report now.","output_tokens":24}
+{"prompt":"Translate to Spanish: The server is busy, please try again later.","output_tokens":24}
+{"prompt":"Answer in one sentence: Why does ice float on water?","output_tokens":32}
+{"prompt":"Solve step by step: A train leaves City A at 60 mph and another leaves City B at 45 mph. They are 315 miles apart and travel toward each other. When do they meet? Explain your reasoning.","output_tokens":192}
+{"prompt":"A store sells notebooks for $3 each and pens for $2 each. A student buys 17 items and spends $43. How many notebooks and pens did the student buy? Show the full reasoning.","output_tokens":224}
+{"prompt":"Write a Python function to merge overlapping intervals. Explain the algorithm, edge cases, and complexity, then provide tests.","output_tokens":256}
+{"prompt":"Implement a simple LRU cache in Python using a dictionary and a doubly linked list. Explain each operation and include a short usage example.","output_tokens":256}

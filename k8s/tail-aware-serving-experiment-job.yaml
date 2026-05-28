@@ -80,6 +80,8 @@ spec:
               value: "1"
             - name: SETUPTOOLS_SCM_PRETEND_VERSION
               value: "0.1.dev0"
+            - name: FLASHINFER_DISABLE_VERSION_CHECK
+              value: "1"
           command:
             - bash
             - -lc
@@ -99,7 +101,6 @@ spec:
                 tail_enabled="$2"
                 eos_thresh="$3"
                 quota="$4"
-                log_path="$OUT/${name}.tail_aware.jsonl"
                 server_log="$OUT/${name}.server.log"
 
                 export VLLM_TAIL_AWARE_SCHEDULING="$tail_enabled"
@@ -107,7 +108,7 @@ spec:
                 export VLLM_TAIL_AWARE_LONG_QUOTA="$quota"
                 export VLLM_TAIL_AWARE_EOS_WINDOW=16
                 export VLLM_TAIL_AWARE_EOS_THRESH="$eos_thresh"
-                export VLLM_TAIL_AWARE_LOG_PATH="$log_path"
+                unset VLLM_TAIL_AWARE_LOG_PATH
 
                 vllm serve "$MODEL" \
                   --host 0.0.0.0 \
@@ -124,6 +125,7 @@ spec:
                   --dataset-name custom \
                   --dataset-path /inputs/serving_mixed.jsonl \
                   --num-prompts 200 \
+                  --disable-shuffle \
                   --request-rate 8 \
                   --temperature 0 \
                   --percentile-metrics ttft,tpot,itl,e2el \
@@ -139,7 +141,7 @@ spec:
               }
 
               run_case baseline 0 0.05 0.2
-              run_case token_count_only 1 0.0 0.2
+              run_case token_count_only 1 1.0 0.2
               run_case eos_aware 1 0.05 0.2
               run_case quota_0_1 1 0.05 0.1
               run_case quota_0_3 1 0.05 0.3
